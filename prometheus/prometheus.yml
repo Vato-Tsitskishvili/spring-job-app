@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+scrape_configs:
+  - job_name: 'company'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'company:8081' ]
+        labels:
+          application: 'Company Service Application'
+
+  - job_name: 'job'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'job:8082' ]
+        labels:
+          application: 'Job Service Application'
+
+  - job_name: 'review'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'review:8083' ]
+        labels:
+          application: 'Review Service Application'

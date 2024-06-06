@@ -1,0 +1,85 @@
+# Environment variables
+job:
+  url: http://job:8082
+
+company:
+  url: http://company:8081
+
+review:
+  url: http://review:8083
+
+
+spring:
+  application:
+    name: job
+  datasource:
+    url: jdbc:postgresql://postgres:5050/job
+    username: vato
+    password: 1
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: create-drop
+  config:
+    import: optional:configserver:http://config-server:8080
+
+server:
+  port: 8082
+  shutdown: graceful
+
+# Eureka client
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka
+    fetch-registry: true
+    register-with-eureka: true
+
+# Zipkin
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  # Actuator and Prometheus
+  endpoints:
+    web:
+      exposure:
+        include: prometheus
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans
+
+# Resilience4j
+resilience4j:
+  circuitbreaker:
+    instances:
+      companyBreaker:
+        register-health-indicator: true
+        sliding-window-size: 10
+        sliding-window-type: count_based
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        wait-duration-in-open-state: 10s
+        failure-rate-threshold: 50
+        automatic-transition-from-open-to-half-open-enabled: true
+  retry:
+    instances:
+      companyBreaker:
+        max-attempts: 5
+        wait-duration: '2s'
+  ratelimiter:
+    instances:
+      companyBreaker:
+        timeout-duration: '0'
+        limit-refresh-period: '4'
+        limit-for-period: 2

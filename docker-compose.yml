@@ -1,0 +1,175 @@
+services:
+  postgres:
+    image: postgres
+    container_name: postgres
+    environment:
+      POSTGRES_USER: vato
+      POSTGRES_PASSWORD: 1
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "5050:5432"
+    networks:
+      - postgres
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    ports:
+      - "5051:80"
+    networks:
+      - postgres
+    restart: unless-stopped
+
+  config-server:
+    image: vakhtangtsitskishvili/config-server
+    container_name: config-server
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-server
+    networks:
+      - microservices
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  eureka-server:
+    image: vakhtangtsitskishvili/eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    depends_on:
+      - rabbitmq
+      - zipkin
+      - postgres
+      - pgadmin
+    networks:
+      - microservices
+      - postgres
+
+  company:
+    image: vakhtangtsitskishvili/company
+    container_name: company
+    ports:
+      - "8081:8081"
+    depends_on:
+      - eureka-server
+      - config-server
+    networks:
+      - microservices
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  job:
+    image: vakhtangtsitskishvili/job
+    container_name: job
+    ports:
+      - "8082:8082"
+    depends_on:
+      - eureka-server
+      - config-server
+    networks:
+      - microservices
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  review:
+    image: vakhtangtsitskishvili/review
+    container_name: review
+    ports:
+      - "8083:8083"
+    depends_on:
+      - eureka-server
+      - config-server
+    networks:
+      - microservices
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  gateway:
+    image: vakhtangtsitskishvili/gateway
+    container_name: gateway
+    ports:
+      - "8084:8084"
+    depends_on:
+      - eureka-server
+    networks:
+      - microservices
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - postgres
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - postgres
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - review
+      - job
+      - company
+    networks:
+      - microservices
+      - postgres
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana-oss
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    links:
+      - prometheus:prometheus
+    volumes:
+      - ./grafana:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=password
+    depends_on:
+      - prometheus
+    networks:
+      - microservices
+      - postgres
+
+networks:
+  microservices:
+    driver: bridge
+  postgres:
+    driver: bridge
+
+volumes:
+  postgres:
+  pgadmin:
+  prometheus:
+  grafana:

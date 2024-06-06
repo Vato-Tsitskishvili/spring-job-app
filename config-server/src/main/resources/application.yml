@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: config-server
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/Vato-Tsitskishvili/application-config
+
+# Eureka Client
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+server:
+  port: 8080
+
+# Prometheus
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus

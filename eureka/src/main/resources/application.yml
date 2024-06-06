@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: eureka
+
+server:
+  port: 8761
+
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+
+# Prometheus
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus
