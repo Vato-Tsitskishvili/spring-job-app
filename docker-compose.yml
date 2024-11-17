@@ -53,10 +53,6 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-    depends_on:
-      - review
-      - job
-      - company
     networks:
       - microservices
       - postgres
