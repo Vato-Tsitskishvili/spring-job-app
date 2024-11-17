@@ -30,8 +30,6 @@ public class JobService {
     }
 
     @CircuitBreaker(name = "companyBreaker", fallbackMethod = "companyBreakerFallback")
-    // @Retry(name = "companyBreaker", fallbackMethod = "companyBreakerFallback")
-    // @RateLimiter(name = "companyBreaker", fallbackMethod = "companyBreakerFallback")
     public List<JobDTO> findAll() {
         List<JobEntity> jobs = jobRepository.findAll();
 
