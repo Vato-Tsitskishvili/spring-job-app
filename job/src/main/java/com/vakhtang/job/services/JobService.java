@@ -8,11 +8,8 @@ import com.vakhtang.job.mapper.JobMapper;
 import com.vakhtang.job.model.dto.JobDTO;
 import com.vakhtang.job.model.entities.JobEntity;
 import com.vakhtang.job.repositories.JobRepository;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,30 +26,12 @@ public class JobService {
         this.reviewClient = reviewClient;
     }
 
-    @CircuitBreaker(name = "companyBreaker", fallbackMethod = "companyBreakerFallback")
     public List<JobDTO> findAll() {
         List<JobEntity> jobs = jobRepository.findAll();
 
         return jobs.stream()
                 .map(this::convertToDTO)
                 .toList();
-    }
-
-    private List<JobDTO> companyBreakerFallback(Exception e) {
-        return new ArrayList<>(
-                Collections.singleton(
-                        new JobDTO(
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null
-                        )
-                )
-        );
     }
 
     private JobDTO convertToDTO(JobEntity job) {

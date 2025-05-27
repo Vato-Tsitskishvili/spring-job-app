@@ -12,7 +12,7 @@ spring:
   application:
     name: review
   datasource:
-    url: jdbc:postgresql://postgres:5050/review
+    url: jdbc:postgresql://postgres:5432/review
     username: vato
     password: 1
   jpa:

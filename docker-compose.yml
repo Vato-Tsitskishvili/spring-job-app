@@ -8,10 +8,12 @@ services:
       PGDATA: /data/postgres
     volumes:
       - postgres:/data/postgres
+      - ./postgresql-init/:/docker-entrypoint-initdb.d/
     ports:
       - "5050:5432"
     networks:
       - postgres
+      - microservices
     restart: unless-stopped
 
   pgadmin:
@@ -27,6 +29,7 @@ services:
       - "5051:80"
     networks:
       - postgres
+      - microservices
     restart: unless-stopped
 
   zipkin:
@@ -35,7 +38,7 @@ services:
     ports:
       - "9411:9411"
     networks:
-      - postgres
+      - microservices
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -44,7 +47,7 @@ services:
       - "5672:5672"
       - "15672:15672"
     networks:
-      - postgres
+      - microservices
 
   prometheus:
     image: prom/prometheus
@@ -55,7 +58,6 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - microservices
-      - postgres
     restart: unless-stopped
 
   grafana:
@@ -74,7 +76,90 @@ services:
       - prometheus
     networks:
       - microservices
+
+  config-server:
+    image: vakhtangtsitskishvili/config-server:latest
+    container_name: config-server
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-server
+    networks:
+      - microservices
       - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  eureka-server:
+    image: vakhtangtsitskishvili/eureka-server:latest
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    depends_on:
+      - rabbitmq
+      - zipkin
+      - postgres
+      - pgadmin
+      - prometheus
+      - grafana
+    networks:
+      - microservices
+      - postgres
+
+  company:
+    image: vakhtangtsitskishvili/company:latest
+    container_name: company
+    ports:
+      - "8081:8081"
+    depends_on:
+      - eureka-server
+      - config-server
+    networks:
+      - microservices
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  job:
+    image: vakhtangtsitskishvili/job:latest
+    container_name: job
+    ports:
+      - "8082:8082"
+    depends_on:
+      - eureka-server
+      - config-server
+    networks:
+      - microservices
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  review:
+    image: vakhtangtsitskishvili/review:latest
+    container_name: review
+    ports:
+      - "8083:8083"
+    depends_on:
+      - eureka-server
+      - config-server
+    networks:
+      - microservices
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  gateway:
+    image: vakhtangtsitskishvili/gateway:latest
+    container_name: gateway
+    ports:
+      - "8084:8084"
+    depends_on:
+      - eureka-server
+    networks:
+      - microservices
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
 
 networks:
   microservices:
